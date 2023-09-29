@@ -6,7 +6,7 @@ arr = ['1','2']
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
-    print(context_value)
+    print(update)
     if not len(context_value) <= 0:
         if not context_value[0] in arr:
             await context.bot.send_message(
