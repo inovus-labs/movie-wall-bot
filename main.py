@@ -25,9 +25,8 @@ if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TOKEN')).build()
     
     start_handler = CommandHandler('start', start)
-    # caps_handler = CommandHandler('caps', caps)
+
 
     application.add_handler(start_handler)
-    # application.add_handler(caps_handler)
 
     application.run_polling()
