@@ -1,12 +1,14 @@
 from decouple import config
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-
+# Test List
 arr = ['1','2']
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
+    print(context_value)
     if not len(context_value) <= 0:
-        if not context_value in arr:
+        if not context_value[0] in arr:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="You are not a Member of Inovus Labs Discord"
@@ -14,7 +16,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
                 await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Welcome {context_value}"
+                text=f"Welcome {context_value[0]}"
             )
 
 
