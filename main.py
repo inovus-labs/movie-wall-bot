@@ -15,9 +15,17 @@ app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 db_collection = db.collection("inovus-movie-wall")
 movie_collection = db_collection.document("Movies")
-user_collection = db_collection.document("users")
+user_collection = db_collection.document("Users")
 watch_log_collection = db_collection.document("WatchLog")
-watch_log_collection.set({"Log ID":"456789","Movie ID":"654987","Discord ID":"sample discord id","Timestamp":"sample timestamp"})
+
+# REFERENCES
+
+# Get all Collection data
+    # for doc in docs:
+        # print(f"{doc.id} => {doc.to_dict()}")
+# Get all Document data
+    # print(f"Document data: {doc.to_dict()}")
+
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
