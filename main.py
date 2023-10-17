@@ -2,13 +2,23 @@ from decouple import config
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 import firebase_admin
-from firebase_admin import firestore
-
+from firebase_admin import firestore,credentials
+from decouple import config 
 arr = ['1','2']
 
+# Use a service account.
+cred = credentials.Certificate(config('FIREBASE_CREDENTIALS'))
+
 # Application Default credentials are automatically created.
-app = firebase_admin.initialize_app()
+app = firebase_admin.initialize_app(cred)
+
 db = firestore.client()
+db_collection = db.collection("inovus-movie-wall")
+movie_collection = db_collection.document("Movies")
+user_collection = db_collection.document("users")
+watch_log_collection = db_collection.document("WatchLog")
+watch_log_collection.set({"Log ID":"456789","Movie ID":"654987","Discord ID":"sample discord id","Timestamp":"sample timestamp"})
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
