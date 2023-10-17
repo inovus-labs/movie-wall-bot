@@ -1,8 +1,14 @@
 from decouple import config
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-# Test List
+import firebase_admin
+from firebase_admin import firestore
+
 arr = ['1','2']
+
+# Application Default credentials are automatically created.
+app = firebase_admin.initialize_app()
+db = firestore.client()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
@@ -22,7 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(config('TOKEN')).build()
+    application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).build()
     
     start_handler = CommandHandler('start', start)
 
