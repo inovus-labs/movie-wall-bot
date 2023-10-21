@@ -7,6 +7,8 @@ from decouple import config
 from google.cloud.firestore_v1.base_query import FieldFilter
 import requests
 import json
+import tmdbsimple as tmdb
+tmdb.API_KEY = config('TMDB_API')
 
 arr = ['1','2']
 
@@ -25,10 +27,11 @@ watch_log_collection = db.collection("WatchLog")
 
 # user = movie_collection.get()
 
+# HERE NEEDS TO GET THE API FOR USERS
 x = requests.get('https://dummyjson.com/users').text
 
 a = json.loads(x)
-print(a['users'][0]["id"])
+# print(a['users'][0]["id"])
 # print(str(x.content["id"]))
 # sample = list(docs)
 # for i  in sample:
@@ -38,12 +41,46 @@ print(a['users'][0]["id"])
 #     # print(f"{doc.id} => {doc.to_dict()[]}")
 #     sample = doc.to_dict()["age"]
 
+search = tmdb.Search()
+response = search.movie(query='the journey to the center of the earth ')
+# print(type(response))
+# print(movie)
+for i in search.results:
+    print(i["backdrop_path"])
+# 88751
+# 'backdrop_path': '/zGLN7ohWaBxDtRmFagq73BXDCMd.jpg',
+# 'poster_path': '/e2PTTF3iGyumCVGEqE3fvp7Us64.jpg', '
+# https://image.tmdb.org/t/p/original/Adlc8JMVEXOelFO6hYpIYcGBx2T.jpg
+url = "https://api.themoviedb.org/3/movie/88751/images"
 
+headers = {
+    "accept": "application/json",
+    "Authorization": "Bearer "+config('TMDB_READ_ACCESS_TOKEN')
+    }
+
+response = requests.get(url, headers=headers)
+
+# print(response.text)
+
+
+
+# url = "https://api.themoviedb.org/3/authentication"
+
+# headers = {
+#     "accept": "application/json",
+#     "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2YTFhNWVjMjAyNGYzNjk0MzViMWQzZmM0ZGMwYTI1MSIsInN1YiI6IjY1MzM3MmQ0OGNmY2M3MDEyYjNmMzQ3OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.xH_Oy-Xw1iREDOW9B3nUZw-sh86IgD-UUxUbC0rXZa4"
+# }
+
+# response = requests.get(url, headers=headers)
+
+# print(response.text)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
     print(update.message.chat.id)
     # print(update.text)
+
+    # HERE NEEDS TO VERIFY THE USER IS A MEMEMBER OF INOVUS LABS DISCORD
     if not len(context_value) <= 0:
         if not context_value[0] in arr:
             await context.bot.send_message(
@@ -57,14 +94,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=f"Welcome {context_value[0]}"
             )
 
+async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context_value = context.args
+    # user_telegram_id = update.message.chat.id
+    generator_expr = (str(element) for element in context_value)
+    separator = ' '
+    result_string = separator.join(generator_expr)
+    # print(result_string)
+    # Here check weather the user is in the db or not in later (IF CONDITION)
+
+    # movie = tmdb.Movies(result_string).info()
+    # response = movie.info()
+    search = tmdb.Search()
+    response = search.movie(query=result_string)
+    # print(type(response))
+    # print(movie)
+    for i in search.results:
+        print(i)
+
 
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).build()
     
     start_handler = CommandHandler('start', start)
+    add_movie_handler = CommandHandler('add_movie', add_movie)
 
 
     application.add_handler(start_handler)
+    application.add_handler(add_movie_handler)
 
     application.run_polling()
