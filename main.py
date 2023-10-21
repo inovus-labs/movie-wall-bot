@@ -5,7 +5,8 @@ import firebase_admin
 from firebase_admin import firestore,credentials
 from decouple import config 
 from google.cloud.firestore_v1.base_query import FieldFilter
-
+import requests
+import json
 
 arr = ['1','2']
 
@@ -16,9 +17,26 @@ cred = credentials.Certificate(config('FIREBASE_CREDENTIALS'))
 app = firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-movie_collection = db.collection("Movie")
 user_collection = db.collection("Users")
+movie_collection = db.collection("Movie")
 watch_log_collection = db.collection("WatchLog")
+
+# user_collection.add({"Discord ID":"hello","Name":"56","Thumbnail":"india","Telegram ID":"Telegra ID"})
+
+# user = movie_collection.get()
+
+x = requests.get('https://dummyjson.com/users').text
+
+a = json.loads(x)
+print(a['users'][0]["id"])
+# print(str(x.content["id"]))
+# sample = list(docs)
+# for i  in sample:
+#     print(i.to_dict()["place"])
+# for doc in docs:
+#     #  print(dict(doc[0]))
+#     # print(f"{doc.id} => {doc.to_dict()[]}")
+#     sample = doc.to_dict()["age"]
 
 
 
@@ -32,6 +50,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=update.effective_chat.id,
                 text="You are not a Member of Inovus Labs Discord"
             )
+
         else:
                 await context.bot.send_message(
                 chat_id=update.effective_chat.id,
