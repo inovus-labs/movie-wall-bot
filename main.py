@@ -4,6 +4,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 import firebase_admin
 from firebase_admin import firestore,credentials
 from decouple import config 
+from google.cloud.firestore_v1.base_query import FieldFilter
+
+
 arr = ['1','2']
 
 # Use a service account.
@@ -13,24 +16,16 @@ cred = credentials.Certificate(config('FIREBASE_CREDENTIALS'))
 app = firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-db_collection = db.collection("inovus-movie-wall")
-movie_collection = db_collection.document("Movies")
-user_collection = db_collection.document("Users")
-watch_log_collection = db_collection.document("WatchLog")
-
-# REFERENCES
-
-# Get all Collection data
-    # for doc in docs:
-        # print(f"{doc.id} => {doc.to_dict()}")
-# Get all Document data
-    # print(f"Document data: {doc.to_dict()}")
+movie_collection = db.collection("Movie")
+user_collection = db.collection("Users")
+watch_log_collection = db.collection("WatchLog")
 
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
-    print(update)
+    print(update.message.chat.id)
+    # print(update.text)
     if not len(context_value) <= 0:
         if not context_value[0] in arr:
             await context.bot.send_message(
