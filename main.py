@@ -8,6 +8,8 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 import requests
 import json
 import tmdbsimple as tmdb
+import time
+
 tmdb.API_KEY = config('TMDB_API')
 
 arr = ['1','2']
@@ -41,16 +43,21 @@ a = json.loads(x)
 #     # print(f"{doc.id} => {doc.to_dict()[]}")
 #     sample = doc.to_dict()["age"]
 
-search = tmdb.Search()
-response = search.movie(query='the journey to the center of the earth ')
-# print(type(response))
-# print(movie)
-for i in search.results:
-    print(i["backdrop_path"])
+
+
+# This is a  sample image fetching 
+
+# search = tmdb.Search()
+# response = search.movie(query='the journey to the center of the earth ')
+# # print(type(response))
+# # print(movie)
+# for i in search.results:
+#     print(i["backdrop_path"])
 # 88751
 # 'backdrop_path': '/zGLN7ohWaBxDtRmFagq73BXDCMd.jpg',
 # 'poster_path': '/e2PTTF3iGyumCVGEqE3fvp7Us64.jpg', '
 # https://image.tmdb.org/t/p/original/Adlc8JMVEXOelFO6hYpIYcGBx2T.jpg
+
 url = "https://api.themoviedb.org/3/movie/88751/images"
 
 headers = {
@@ -109,13 +116,23 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = search.movie(query=result_string)
     # print(type(response))
     # print(movie)
-    for i in search.results:
-        print(i)
+    for i in search.results[:3]:
+        # print("Background:",i["backdrop_path"],"Overview:",i["overview"],"Release Date:",i["release_date"],"Original Date:",i['original_title'])
+        # print(i["poster_path"])
+        if not i["backdrop_path"] == None:
+            url = "https://image.tmdb.org/t/p/original"+i["poster_path"]
+            print(url)
+            # await update.message.reply_text(text=url,)
+            await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=url)
 
-
+# overview
+# release_date
+# original_title
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).build()
+    application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
     
     start_handler = CommandHandler('start', start)
     add_movie_handler = CommandHandler('add_movie', add_movie)
