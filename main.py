@@ -1,6 +1,6 @@
 from decouple import config
 from telegram import Update,InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler,CallbackQueryHandler
 import firebase_admin
 from firebase_admin import firestore,credentials
 from decouple import config 
@@ -121,6 +121,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=f"Welcome {context_value[0]}"
             )
 
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    await query.answer()
+
+    await query.edit_message_text(text=f"Selected option: {query.data}")
+
 async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
     # user_telegram_id = update.message.chat.id
@@ -159,5 +169,7 @@ if __name__ == '__main__':
 
     application.add_handler(start_handler)
     application.add_handler(add_movie_handler)
+    application.add_handler(CallbackQueryHandler(button))
 
-    application.run_polling()
+    # Run the bot until the user presses Ctrl-C
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
