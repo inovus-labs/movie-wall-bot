@@ -121,11 +121,15 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # print(i["poster_path"])
         if not i["backdrop_path"] == None:
             url = "https://image.tmdb.org/t/p/original"+i["poster_path"]
-            print(url)
-            # await update.message.reply_text(text=url,)
+            overview = i["overview"]
+            release_date = i["release_date"]
+            original_title = i["original_title"]
+            new_line = '\n'
+            # print(url)
+            # await update.message.reply_text(text=f"{url}{overview}{release_date}{original_title}")
             await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=url)
+            text="**Overview**\n"+overview+"\n**Released Date**\n"+release_date+"\n**Original Title**\n"+original_title+"\n"+url)
 
 # overview
 # release_date
@@ -133,7 +137,6 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
-    
     start_handler = CommandHandler('start', start)
     add_movie_handler = CommandHandler('add_movie', add_movie)
 
