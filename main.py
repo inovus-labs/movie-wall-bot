@@ -1,5 +1,5 @@
 from decouple import config
-from telegram import Update
+from telegram import Update,InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 import firebase_admin
 from firebase_admin import firestore,credentials
@@ -9,6 +9,16 @@ import requests
 import json
 import tmdbsimple as tmdb
 import time
+import logging
+
+# Enable logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
 
 tmdb.API_KEY = config('TMDB_API')
 
@@ -86,7 +96,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
     print(update.message.chat.id)
     # print(update.text)
+    keyboard = [
+        [
+            InlineKeyboardButton("Option 1", callback_data="1"),
+            InlineKeyboardButton("Option 2", callback_data="2"),
+            InlineKeyboardButton("Option 3", callback_data="2"),
+        ],
+        [InlineKeyboardButton("None of the above", callback_data="3")],
+    ]
 
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Choose your option:", reply_markup=reply_markup)
     # HERE NEEDS TO VERIFY THE USER IS A MEMEMBER OF INOVUS LABS DISCORD
     if not len(context_value) <= 0:
         if not context_value[0] in arr:
@@ -124,16 +144,12 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
             overview = i["overview"]
             release_date = i["release_date"]
             original_title = i["original_title"]
-            new_line = '\n'
             # print(url)
             # await update.message.reply_text(text=f"{url}{overview}{release_date}{original_title}")
             await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="**Overview**\n"+overview+"\n**Released Date**\n"+release_date+"\n**Original Title**\n"+original_title+"\n"+url)
 
-# overview
-# release_date
-# original_title
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
