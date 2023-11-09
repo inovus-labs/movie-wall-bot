@@ -1,6 +1,6 @@
 from decouple import config
 from telegram import Update,InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler,CallbackQueryHandler
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler,CallbackQueryHandler,MessageHandler
 import firebase_admin
 from firebase_admin import firestore,credentials
 from decouple import config 
@@ -96,17 +96,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
     print(update.message.chat.id)
     # print(update.text)
-    keyboard = [
-        [
-            InlineKeyboardButton("Option 1", callback_data="1"),
-            InlineKeyboardButton("Option 2", callback_data="2"),
-            InlineKeyboardButton("Option 3", callback_data="2"),
-        ],
-        [InlineKeyboardButton("None of the above", callback_data="3")],
-    ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Choose your option:", reply_markup=reply_markup)
     # HERE NEEDS TO VERIFY THE USER IS A MEMEMBER OF INOVUS LABS DISCORD
     if not len(context_value) <= 0:
         if not context_value[0] in arr:
@@ -124,6 +114,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
+    print(query.data)
 
     # CallbackQueries need to be answered, even if no notification to the user is needed
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
@@ -144,22 +135,44 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # response = movie.info()
     search = tmdb.Search()
     response = search.movie(query=result_string)
+    # print(search.results[3])
     # print(type(response))
     # print(movie)
-    for i in search.results[:3]:
-        # print("Background:",i["backdrop_path"],"Overview:",i["overview"],"Release Date:",i["release_date"],"Original Date:",i['original_title'])
-        # print(i["poster_path"])
-        if not i["backdrop_path"] == None:
-            url = "https://image.tmdb.org/t/p/original"+i["poster_path"]
-            overview = i["overview"]
-            release_date = i["release_date"]
-            original_title = i["original_title"]
-            # print(url)
-            # await update.message.reply_text(text=f"{url}{overview}{release_date}{original_title}")
-            await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="**Overview**\n"+overview+"\n**Released Date**\n"+release_date+"\n**Original Title**\n"+original_title+"\n"+url)
-
+    if search.results:
+        # first_callback = search.results[0]['id']
+        # print(first_callback)
+        keyboard = []
+        option_count = 1
+        for i in search.results[:3]:
+            # print(i['id'])
+            # global keyboard
+            # print("Background:",i["backdrop_path"],"Overview:",i["overview"],"Release Date:",i["release_date"],"Original Date:",i['original_title'])
+            # print(i["poster_path"])
+            if not i["backdrop_path"] == None:
+                url = "https://image.tmdb.org/t/p/original"+i["poster_path"]
+                overview = i["overview"]
+                release_date = i["release_date"]
+                original_title = i["original_title"]
+                # print(url)
+                # await update.message.reply_text(text=f"{url}{overview}{release_date}{original_title}")
+                await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="**Overview**\n"+overview+"\n**Released Date**\n"+release_date+"\n**Original Title**\n"+original_title+"\n"+url)
+              
+            # The keyboard list will  insert each  InlineKeyboardButton
+            # The appending is working in Option and we assign a local variable already for the count and it will increment and callback_data is the `id` from the TMDB server
+            keyboard.append([InlineKeyboardButton("Option "+str(option_count), callback_data=str(i['id']))])
+            # It will increment the counter number for callback_data
+            option_count += 1
+        # We need the this button last of the all the buttons so we appeded this here
+        keyboard.append([InlineKeyboardButton("None of the above", callback_data="None")])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("Choose your option:", reply_markup=reply_markup)
+    else:
+        await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="No movie found with "+result_string
+            )
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
