@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 tmdb.API_KEY = config('TMDB_API')
 
+# This is a sample test array for validating /start command for testing purpose 
 arr = ['1','2']
 
 # Use a service account.
@@ -35,7 +36,9 @@ user_collection = db.collection("Users")
 movie_collection = db.collection("Movie")
 watch_log_collection = db.collection("WatchLog")
 
-# user_collection.add({"Discord ID":"hello","Name":"56","Thumbnail":"india","Telegram ID":"Telegra ID"})
+# user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
+# user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
+# user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
 
 # user = movie_collection.get()
 
@@ -92,6 +95,54 @@ response = requests.get(url, headers=headers)
 
 # print(response.text)
 
+# docs = user_collection.stream()
+
+# for doc in docs:
+#     print(f"{doc.id} => {doc.to_dict()}")
+
+
+# doc_ref = user_collection.document("1177818025")
+
+# doc = doc_ref.get()
+# if doc.exists:
+#     print(f"Document data: {doc.to_dict()}")
+# else:
+#     print("No such document!")
+
+
+# collections = user_collection.document("1177818025").collections()
+# for collection in collections:
+#     for doc in collection.stream():
+#         print(f"{doc.id} => {doc.to_dict()}")
+
+
+# announce_docs = user_collection.stream()
+
+# # for doc in announce_docs:
+# #         print(doc.to_dict())
+# # print(announce_docs)
+# for doc in announce_docs:
+#    print(f"{doc.id} => {doc.to_dict()}")
+
+
+# docs = (
+#     user_collection
+#     .where(filter=FieldFilter("Name", "==", "Arjun "))
+#     .get()
+# )
+# if docs:
+#     for doc in docs:
+#         print(f"{doc.id} => {doc.to_dict()}")
+# else:
+#     print("not found")
+
+
+# city = {"Discord ID": "093845098", "Name": "Alan","Thumbnail":"7545934958327","Telegram ID":"1177818025"}
+# city = {"Discord ID": "093845098", "Name": "Nithin Daniel","Thumbnail":"23452345235","Telegram ID":"23424523424"}
+# city = {"Discord ID": "1177818025", "Name": "Badhusha","Thumbnail":"0988765","Telegram ID":"2345365356"}
+# update_time, city_ref = user_collection.add(city)
+# print(f"Added document with id {city_ref.id}")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
     print(update.message.chat.id)
@@ -114,13 +165,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
-    print(query.data)
-
     # CallbackQueries need to be answered, even if no notification to the user is needed
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     await query.answer()
+    current_user = query.from_user.id
 
-    await query.edit_message_text(text=f"Selected option: {query.data}")
+    if not query.data == 'None':
+        user_validation = (
+        user_collection
+        .where(filter=FieldFilter("Discord ID", "==", "093845098"))
+        .stream()
+        )
+        # This validation checks weather the user is exist of not in the database
+        if user_validation:
+            print("found")
+        else:
+            await query.edit_message_text(text=f"You are not a member of Inovus Labs IEDC Discord")   
+    else:
+        await query.edit_message_text(text=f"You can search more movies with /add_movie movie_name")    
 
 async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
