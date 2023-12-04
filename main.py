@@ -39,6 +39,9 @@ watch_log_collection = db.collection("WatchLog")
 # user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
 # user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
 # user_collection.add({"Discord_ID":"hello","Name":"56","Thumbnail":"india","Telegram_ID":"Telegra ID"})
+# movie_collection.add({"Movie_ID":"12345","Movie_Name":"avatar","Thumbnail_Url":"india","User":["sample"]})
+
+
 
 # user = movie_collection.get()
 
@@ -142,6 +145,7 @@ response = requests.get(url, headers=headers)
 # city = {"Discord ID": "1177818025", "Name": "Badhusha","Thumbnail":"0988765","Telegram ID":"2345365356"}
 # update_time, city_ref = user_collection.add(city)
 # print(f"Added document with id {city_ref.id}")
+
 movie_name = ''
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context_value = context.args
@@ -169,22 +173,51 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     await query.answer()
     current_user = query.from_user.id
-    print(query.data)
     if not query.data == 'None' and not query.data == "NotAvailable":
-        user_validation = (
-        user_collection
-        .where(filter=FieldFilter("Telegram ID", "==", current_user))
+        # Here the query data for saving data to database
+        # print(query.data)
+        movie_id = query.data.split()[0]
+        movie_language = query.data.split()[1]
+        # print(movie_language)
+        # Here the where condition for user is in the database
+        user_validation = (user_collection.where(filter=FieldFilter("Telegram_ID", "==", current_user)).stream())
+        # Here the where condition for movie is in the database
+        movie_validation = (
+        movie_collection
+        .where(filter=FieldFilter("Movie_ID", "==", movie_id))
         .stream()
         )
-        # This validation checks weather the user is exist of not in the database
-        # if user_validation:
-        #     print("##########")
-        #     print(movie_name)
 
-        #     print("found")
-        # else:
-        #     await query.edit_message_text(text=f"You are not a member of Inovus Labs IEDC Discord")   
-        print("inside data")
+        # Here the API get all the movie details with movie_id and movie_language 
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}?language={movie_language}"
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": "Bearer "+config('TMDB_READ_ACCESS_TOKEN')
+        }
+
+        response = requests.get(url, headers=headers)
+        # print(response.json()["adult"])
+        response_movie_title = response.json()["title"]
+        response_movie_id = response.json()["id"]
+        response_movie_poster_path = response.json()["poster_path"]
+        # This validation checks weather the user is exist of not in the database
+        # print(movie_id)
+        movie_collection_id = ""
+        if user_validation:
+            # if  movie_validation:
+            movie_collection.where(filter=FieldFilter("Movie_ID", "==", movie_id))
+            # movie = movie_collection.where(filter=FieldFilter("Movie_ID", "==", movie_id))
+            # print(movie.name)
+            # if  movie:
+            #     # print(movie_collection.where(filter=FieldFilter("Movie_ID", "in", movie_id)).get())
+            #     # movie_update.update({"User":firestore.ArrayUnion(list("hello"))})
+            #     print("ond")
+            # else:
+            #     print("illa")
+            #     movie_collection.add({"Movie_ID":response_movie_id,"Movie_Name":response_movie_title,"Thumbnail_Url":response_movie_poster_path,"User":[current_user]})
+        else:
+            await query.edit_message_text(text=f"You are not a member of Inovus Labs IEDC Discord")   
     elif query.data == 'NotAvailable':
                 await context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -194,7 +227,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         search = tmdb.Search()
         response = search.movie(query=movie_name)
         if search.results:
-            print(search.results)
             # print(search.results)
             # first_callback = search.results[0]['id']
             # print(first_callback)
@@ -203,8 +235,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             option_count = 1
             for i in search.results[3:9]:
                 if  i["overview"]:
-                    print("************")
-                    # print(i["overview"])
                     url = "https://image.tmdb.org/t/p/original"+str(i["poster_path"])
                     overview = i["overview"]
                     release_date = i["release_date"]
@@ -216,7 +246,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 
                 # The keyboard list will  insert each  InlineKeyboardButton
                 # The appending is working in Option and we assign a local variable already for the count and it will increment and callback_data is the `id` from the TMDB server
-                keyboard.append([InlineKeyboardButton("Option "+str(option_count), callback_data=str(i['id']))])
+                keyboard.append([InlineKeyboardButton("Option "+str(option_count), callback_data=str(i['id'])+"  "+str(i['original_language']))])
                 # It will increment the counter number for callback_data
                 option_count += 1
         # We need the this button last of the all the buttons so we appeded this here
@@ -245,24 +275,18 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = []
         option_count = 1
         for i in search.results[:3]:
-            # print(i['id'])
-            # global keyboard
-            # print("Background:",i["backdrop_path"],"Overview:",i["overview"],"Release Date:",i["release_date"],"Original Date:",i['original_title'])
-            # print(i["poster_path"])
             if not i["backdrop_path"] == None:
                 url = "https://image.tmdb.org/t/p/original"+i["poster_path"]
                 overview = i["overview"]
                 release_date = i["release_date"]
                 original_title = i["original_title"]
-                # print(url)
-                # await update.message.reply_text(text=f"{url}{overview}{release_date}{original_title}")
                 await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="**Overview**\n"+overview+"\n**Released Date**\n"+release_date+"\n**Original Title**\n"+original_title+"\n"+url)
               
             # The keyboard list will  insert each  InlineKeyboardButton
             # The appending is working in Option and we assign a local variable already for the count and it will increment and callback_data is the `id` from the TMDB server
-            keyboard.append([InlineKeyboardButton("Option "+str(option_count), callback_data=str(i['id']))])
+            keyboard.append([InlineKeyboardButton("Option "+str(option_count), callback_data=str(i['id'])+"  "+str(i['original_language']))])
             # It will increment the counter number for callback_data
             option_count += 1
         # We need the this button last of the all the buttons so we appeded this here
@@ -270,10 +294,7 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text("Choose your option:", reply_markup=reply_markup)
     else:
-        await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="No movie found with "+result_string
-            )
+        await context.bot.send_message(chat_id=update.effective_chat.id,text="No movie found with "+result_string)
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
