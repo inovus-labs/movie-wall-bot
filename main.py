@@ -203,19 +203,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         response_movie_poster_path = response.json()["poster_path"]
         # This validation checks weather the user is exist of not in the database
         # print(movie_id)
-        movie_collection_id = ""
         if user_validation:
-            # if  movie_validation:
-            movie_collection.where(filter=FieldFilter("Movie_ID", "==", movie_id))
-            # movie = movie_collection.where(filter=FieldFilter("Movie_ID", "==", movie_id))
-            # print(movie.name)
-            # if  movie:
-            #     # print(movie_collection.where(filter=FieldFilter("Movie_ID", "in", movie_id)).get())
-            #     # movie_update.update({"User":firestore.ArrayUnion(list("hello"))})
-            #     print("ond")
+                movie_collection_id = ""
+                movie = movie_collection.where(filter=FieldFilter("Movie_ID", "!=", movie_id))
+                query_results = movie.get()
+                for document in query_results:
+                    if document.to_dict()['Movie_ID'] == int(movie_id):
+                        document_id = document.id 
+                        break
+                    else:
+                        print("not avalilable")
+                        break
             # else:
-            #     print("illa")
-            #     movie_collection.add({"Movie_ID":response_movie_id,"Movie_Name":response_movie_title,"Thumbnail_Url":response_movie_poster_path,"User":[current_user]})
+                # movie_collection.add({"Movie_ID":response_movie_id,"Movie_Name":response_movie_title,"Thumbnail_Url":response_movie_poster_path,"User":[current_user]})
         else:
             await query.edit_message_text(text=f"You are not a member of Inovus Labs IEDC Discord")   
     elif query.data == 'NotAvailable':
