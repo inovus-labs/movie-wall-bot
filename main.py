@@ -204,13 +204,25 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # This validation checks weather the user is exist of not in the database
         # print(movie_id)
         if user_validation:
-                movie_collection_id = ""
                 movie = movie_collection.where(filter=FieldFilter("Movie_ID", "!=", movie_id))
                 query_results = movie.get()
                 for document in query_results:
+                    # print(document.to_dict())
                     if document.to_dict()['Movie_ID'] == int(movie_id):
-                        document_id = document.id 
-                        break
+                        document_id = document.id
+                        movie_user_count = len(document.to_dict()['User'])
+                        loop_start = 0
+                        for i in range(movie_user_count):
+                            if not document.to_dict()['User'][loop_start] == current_user:
+                                print("user 2")
+                                movie_append = movie_collection.document(document_id)
+                                movie_append.update({"User": firestore.ArrayUnion([current_user])})   
+                                loop_start += 1
+                                break 
+                            elif document.to_dict()['User'][loop_start] == current_user:
+                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="You already added this movie")
+                            else:
+                                loop_start += 1
                     else:
                         print("not avalilable")
                         break
