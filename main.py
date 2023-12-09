@@ -217,10 +217,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                         loop_start = 0
                         for i in range(movie_user_count):
                             if not document.to_dict()['User'][loop_start] == current_user:
-                                print("user 2")
                                 movie_append = movie_collection.document(document_id)
                                 movie_append.update({"User": firestore.ArrayUnion([current_user])})   
                                 loop_start += 1
+                                await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie added")
                                 break 
                             elif document.to_dict()['User'][loop_start] == current_user:
                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="You already added this movie")
@@ -308,6 +308,50 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Choose your option:", reply_markup=reply_markup)
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id,text="No movie found with "+result_string)
+
+
+async def delete_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context_value = context.args
+    # user_telegram_id = update.message.chat.id
+    generator_expr = (str(element) for element in context_value)
+    separator = ' '
+    result_string = separator.join(generator_expr)
+
+
+docs =movie_collection.stream()
+loop_start = 0
+# query = update.callback_query
+# # CallbackQueries need to be answered, even if no notification to the user is needed
+# # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+# await query.answer()
+# current_user = query.from_user.id
+# for doc in docs:
+#     if doc.to_dict()['Movie_Name'] == 'journey to the center of the earth':
+#         print(f"{doc.to_dict()['Movie_Name']}")
+#         if doc.to_dict()['User'][loop_start] == str(1177818025):
+#              print("movie foud with your user id")
+#              break
+#         else:
+#              print("movie not found with your user id")
+#              break
+#     else:
+#         loop_start += 1
+#         print("not found")
+
+for doc in docs:
+    print(doc.to_dict()['User'])
+    for i in doc.to_dict()['User'][loop_start]:
+        if "1177818025" in doc.to_dict()['User']:
+            print("yes i am here")
+        else:
+            loop_start += 1
+        # if doc.to_dict()['User'][loop_start] == str(1177818025):
+        #     print(f"{doc.id} {doc.to_dict()['Movie_name']}")
+        #     break
+        # else:
+        #     loop_start +=1
+
+# print("exited")
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
