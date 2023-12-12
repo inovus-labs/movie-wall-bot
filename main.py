@@ -10,6 +10,7 @@ import json
 import tmdbsimple as tmdb
 import time
 import logging
+from fuzzywuzzy import process
 
 # Enable logging
 logging.basicConfig(
@@ -219,8 +220,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                             if not document.to_dict()['User'][loop_start] == current_user:
                                 movie_append = movie_collection.document(document_id)
                                 movie_append.update({"User": firestore.ArrayUnion([current_user])})   
-                                loop_start += 1
                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie added")
+                                # loop_start += 1
                                 break 
                             elif document.to_dict()['User'][loop_start] == current_user:
                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="You already added this movie")
@@ -228,10 +229,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                             else:
                                 loop_start += 1
                                 break
-                    else:
-                        movie_collection.add({"Movie_ID":response_movie_id,"Movie_Name":response_movie_title,"Thumbnail_Url":response_movie_poster_path,"User":[current_user]})
-                        await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie added")
-                        break
     elif query.data == 'NotAvailable':
                 await query.edit_message_text(text=f"Selected option: None")
                 await context.bot.send_message(
@@ -311,56 +308,65 @@ async def add_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def delete_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    current_user = update.message.chat.id
     context_value = context.args
-    # user_telegram_id = update.message.chat.id
     generator_expr = (str(element) for element in context_value)
     separator = ' '
     result_string = separator.join(generator_expr)
 
 
-docs =movie_collection.stream()
-loop_start = 0
-# query = update.callback_query
-# # CallbackQueries need to be answered, even if no notification to the user is needed
-# # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-# await query.answer()
-# current_user = query.from_user.id
-# for doc in docs:
-#     if doc.to_dict()['Movie_Name'] == 'journey to the center of the earth':
-#         print(f"{doc.to_dict()['Movie_Name']}")
-#         if doc.to_dict()['User'][loop_start] == str(1177818025):
-#              print("movie foud with your user id")
-#              break
-#         else:
-#              print("movie not found with your user id")
-#              break
-#     else:
-#         loop_start += 1
-#         print("not found")
+    # # CallbackQueries need to be answered, even if no notification to the user is needed
+    # # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    docs =movie_collection.stream()
+    movie_list_array = []
+    for doc in docs:
+        movie_list_array.append(doc.to_dict()['Movie_Name'])
 
-for doc in docs:
-    print(doc.to_dict()['User'])
-    for i in doc.to_dict()['User'][loop_start]:
-        if "1177818025" in doc.to_dict()['User']:
-            print("yes i am here")
+    movie_found = process.extractOne(result_string, movie_list_array)[0] 
+    if movie_found:
+        movie_users_id = []
+        docs = (
+        movie_collection
+        .where(filter=FieldFilter("Movie_Name", "==", movie_found))
+        .stream()
+    )
+    for doc in docs:
+        print(f"{doc.id} => {doc.to_dict()}")
+        if current_user in doc.to_dict()['User']:
+            print("user is here ")
+            # .update({"User": firestore.ArrayUnion([current_user])})
+            current_movie = movie_collection.document(doc.id)
+            current_movie.update({"User":firestore.ArrayRemove([current_user])})
+            await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie not found")
         else:
-            loop_start += 1
-        # if doc.to_dict()['User'][loop_start] == str(1177818025):
-        #     print(f"{doc.id} {doc.to_dict()['Movie_name']}")
-        #     break
-        # else:
-        #     loop_start +=1
+            await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie not found")
+            break
 
-# print("exited")
+    # docs = (
+    #     movie_collection
+    #     .where(filter=FieldFilter("Movie_Name", "==", "Jobs"))
+    #     .stream()
+    # )
+
+    # for doc in docs:
+    #     print(f"{doc.id} => {doc.to_dict()}")
+    #     if current_user in doc.to_dict()['User']:
+    #         # print("user is here ")
+    #         # .update({"User": firestore.ArrayUnion([current_user])})
+    #         current_movie = movie_collection.document(doc.id)
+    #         current_movie.update({"User":firestore.ArrayRemove([current_user])})
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
     start_handler = CommandHandler('start', start)
     add_movie_handler = CommandHandler('add_movie', add_movie)
+    delete_movie_handler = CommandHandler('delete_movie', delete_movie)
 
 
     application.add_handler(start_handler)
     application.add_handler(add_movie_handler)
+    application.add_handler(delete_movie_handler)
     application.add_handler(CallbackQueryHandler(button))
 
     # Run the bot until the user presses Ctrl-C
