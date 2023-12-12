@@ -217,17 +217,23 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                         movie_user_count = len(document.to_dict()['User'])
                         loop_start = 0
                         for i in range(movie_user_count):
-                            if not document.to_dict()['User'][loop_start] == current_user:
+                            # if not document.to_dict()['User'][loop_start] == current_user:
+                            if  current_user not in  document.to_dict()['User']:
                                 movie_append = movie_collection.document(document_id)
                                 movie_append.update({"User": firestore.ArrayUnion([current_user])})   
                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie added")
                                 # loop_start += 1
                                 break 
-                            elif document.to_dict()['User'][loop_start] == current_user:
+                            # elif document.to_dict()['User'][loop_start] == current_user:
+                            elif current_user in  document.to_dict()['User']:
                                 await context.bot.send_message(chat_id=update.effective_chat.id,text="You already added this movie")
                                 break
+                            # else:
+                            #     loop_start += 1
+                            #     break
                             else:
-                                loop_start += 1
+                                movie_collection.add({"Movie_ID":response_movie_id,"Movie_Name":response_movie_title,"Thumbnail_Url":response_movie_poster_path,"User":[current_user]})
+                                await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie added")
                                 break
     elif query.data == 'NotAvailable':
                 await query.edit_message_text(text=f"Selected option: None")
@@ -325,37 +331,19 @@ async def delete_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     movie_found = process.extractOne(result_string, movie_list_array)[0] 
     if movie_found:
-        movie_users_id = []
         docs = (
         movie_collection
         .where(filter=FieldFilter("Movie_Name", "==", movie_found))
         .stream()
     )
     for doc in docs:
-        print(f"{doc.id} => {doc.to_dict()}")
         if current_user in doc.to_dict()['User']:
-            print("user is here ")
-            # .update({"User": firestore.ArrayUnion([current_user])})
             current_movie = movie_collection.document(doc.id)
             current_movie.update({"User":firestore.ArrayRemove([current_user])})
-            await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie not found")
+            await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie removed")
         else:
-            await context.bot.send_message(chat_id=update.effective_chat.id,text="Movie not found")
+            await context.bot.send_message(chat_id=update.effective_chat.id,text="You where not found in the movie list")
             break
-
-    # docs = (
-    #     movie_collection
-    #     .where(filter=FieldFilter("Movie_Name", "==", "Jobs"))
-    #     .stream()
-    # )
-
-    # for doc in docs:
-    #     print(f"{doc.id} => {doc.to_dict()}")
-    #     if current_user in doc.to_dict()['User']:
-    #         # print("user is here ")
-    #         # .update({"User": firestore.ArrayUnion([current_user])})
-    #         current_movie = movie_collection.document(doc.id)
-    #         current_movie.update({"User":firestore.ArrayRemove([current_user])})
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(config('TELEGRAM_TOKEN')).read_timeout(30).write_timeout(30).build()
